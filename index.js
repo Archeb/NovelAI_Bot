@@ -166,7 +166,7 @@ bot.command("editparameter", async (ctx) => {
 
 bot.command("enable", (ctx) => {
 	arguments = ctx.message.text.substring(8);
-	if (arguments == "hsfl114514" && !userSettings[ctx.from.id]) {
+	if (arguments == process.env.PASSWORD && !userSettings[ctx.from.id]) {
 		userSettings[ctx.from.id] = {};
 		saveAllUserSettings();
 		ctx.reply("Authorized");
