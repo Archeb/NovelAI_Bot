@@ -9,6 +9,7 @@ const concatstream = require("concat-stream");
 const endpoint = "https://api.novelai.net/ai/generate-image";
 const defaultUC =
 	"{bad}, error, fewer, extra, missing, worst quality, jpeg artifacts, bad quality, watermark, unfinished, displeasing, chromatic aberration, signature, extra digits, artistic error, username, scan, [abstract], bad anatomy, bad proportions";
+const defaultQT = "best quality, amazing quality, very aesthetic, absurdres";
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const userSettings = require("./config/userSettings.json");
@@ -117,7 +118,7 @@ bot.command("advancedgenerate", (ctx) => {
 	height = 1216,
 	sampler = "k_dpmpp_2s_ancestral",
 	scale = 5,
-	uc = defaultUC,
+	negative_prompt = uc,
 	steps = 28,
 }
 \`\`\``,
@@ -188,9 +189,20 @@ bot.command("setuc", (ctx) => {
 	if (arguments != "") {
 		userSettings[ctx.from.id].uc = arguments;
 		saveAllUserSettings();
-		ctx.reply("UC已设置");
+		ctx.reply("negative prompt 已设置");
 	} else {
-		ctx.reply("请在命令后输入你不想要的内容（Undesired Content）\n默认UC为：`" + defaultUC + "`", { parse_mode: "Markdown" });
+		ctx.reply("请在命令后输入 negative prompt \n默认为：`" + defaultUC + "`", { parse_mode: "Markdown" });
+	}
+});
+
+bot.command("setqt", (ctx) => {
+	arguments = ctx.message.text.substring(7);
+	if (arguments != "") {
+		userSettings[ctx.from.id].qt = arguments;
+		saveAllUserSettings();
+		ctx.reply("Quality Tags 已设置");
+	} else {
+		ctx.reply("请在命令后输入 Quality Tags \n默认为：`" + defaultQT + "`", { parse_mode: "Markdown" });
 	}
 });
 
@@ -408,12 +420,13 @@ function RequestAPI({
 	height = 1216,
 	sampler = "k_dpmpp_2s_ancestral",
 	scale = 5,
+	qt = defaultQT,
 	uc = defaultUC,
 	steps = 28,
 }) {
 	return new Promise((resolve, reject) => {
 		let finalSettings = {
-			"input": prompt,
+			"input": prompt + " " + qt,
 			"model": "nai-diffusion-3",
 			"action": "generate",
 			"parameters": {
