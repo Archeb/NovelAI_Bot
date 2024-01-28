@@ -396,7 +396,7 @@ async function ProcessUserRequest(ctx, temporarySettings = {}, newSeed = false) 
 					caption: `Seed: \`${apiRet.settings.parameters.seed}\`
 Scale: \`${apiRet.settings.parameters.scale}\`
 Sampler: \`${apiRet.settings.parameters.sampler}\`
-Prompt: \`${temporarySettings.prompt < 990 ? temporarySettings.prompt : "太长了，自己反思一下"}\``,
+Prompt: \`${temporarySettings.prompt.length < 990 ? temporarySettings.prompt : "太长了，自己反思一下"}\``,
 					parse_mode: "Markdown",
 					reply_to_message_id: ctx.message?.message_id ?? undefined,
 					...Markup.inlineKeyboard([
@@ -407,7 +407,9 @@ Prompt: \`${temporarySettings.prompt < 990 ? temporarySettings.prompt : "太长�
 			);
 		})
 		.catch((err) => {
-			if (err.length < 500) {
+			if(err.indexOf(`An error occured while generating the image` != -1)) {
+				ctx.reply("出现错误：`NovelAI API 后端错误，请重试。`", { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.callback("🔁 重试", "repeatSample")]])});
+			}else if (err.length < 500) {
 				ctx.reply("出现错误：`" + err + "`", { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.callback("🔁 重试", "repeatSample")]])});
 			}else{
 				ctx.reply("出现错误：`" + err.substring(0, 500) + "`", { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.callback("🔁 重试", "repeatSample")]])});
