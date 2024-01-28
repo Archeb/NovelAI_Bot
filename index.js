@@ -240,11 +240,6 @@ bot.command("setscale", (ctx) => {
 bot.command("getstatus", (ctx) => {
 	ctx.reply("当前有 " + apiQueue.getLength() + " 个任务\n您当前的个人设置为 `" + JSON.stringify(userSettings[ctx.from.id]) + "`", { parse_mode: "Markdown" });
 });
-
-bot.on(message('text'), async (ctx) => {
-	ProcessUserRequest(ctx, { prompt: ctx.message.text });
-});
-
 bot.command("generate", (ctx) => {
 	arguments = ctx.message.text.split(" ").slice(1).join(" ");
 	if (arguments != "") {
@@ -253,6 +248,11 @@ bot.command("generate", (ctx) => {
 		ctx.reply("请在命令后输入 prompt");
 	}
 });
+
+bot.on(message('text'), async (ctx) => {
+	ProcessUserRequest(ctx, { prompt: ctx.message.text });
+});
+
 
 bot.on("callback_query", async (ctx) => {
 	switch (ctx.callbackQuery.data.split(" ")[0]) {
