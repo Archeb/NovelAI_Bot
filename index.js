@@ -1,5 +1,5 @@
 const { Telegraf, Markup } = require("telegraf");
-import { message } from 'telegraf/filters';
+const { message } = 'telegraf/filters';
 var yauzl = require("yauzl");
 const superagent = require("superagent");
 const queue = require("promise-queue-plus");
