@@ -426,7 +426,7 @@ function RequestAPI({
 }) {
 	return new Promise((resolve, reject) => {
 		let finalSettings = {
-			"input": prompt + " " + qt,
+			"input": prompt + "," + qt,
 			"model": "nai-diffusion-3",
 			"action": "generate",
 			"parameters": {
