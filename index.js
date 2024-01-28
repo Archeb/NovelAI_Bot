@@ -396,7 +396,7 @@ async function ProcessUserRequest(ctx, temporarySettings = {}, newSeed = false) 
 					caption: `Seed: \`${apiRet.settings.parameters.seed}\`
 Scale: \`${apiRet.settings.parameters.scale}\`
 Sampler: \`${apiRet.settings.parameters.sampler}\`
-Prompt: \`${apiRet.settings.input.length < 990 ? apiRet.settings.input : "太长了，自己反思一下"}\``,
+Prompt: \`${temporarySettings.prompt < 990 ? temporarySettings.prompt : "太长了，自己反思一下"}\``,
 					parse_mode: "Markdown",
 					reply_to_message_id: ctx.message?.message_id ?? undefined,
 					...Markup.inlineKeyboard([
