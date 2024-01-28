@@ -1,4 +1,5 @@
 const { Telegraf, Markup } = require("telegraf");
+import { message } from 'telegraf/filters';
 var yauzl = require("yauzl");
 const superagent = require("superagent");
 const queue = require("promise-queue-plus");
@@ -44,7 +45,7 @@ text2img: type prompts in the chatbox and send to me.`
 );
 
 bot.command("setsize", (ctx) => {
-	arguments = ctx.message.text.substring(9);
+	arguments = ctx.message.text.split(" ").slice(1).join(" ");
 	if (arguments != "") {
 		arguments = arguments.split(" ");
 		if (arguments.length == 2) {
@@ -89,7 +90,7 @@ bot.command("setsampler", (ctx) => {
 });
 
 bot.command("advancedgenerate", (ctx) => {
-	arguments = ctx.message.text.substring(18);
+	arguments = ctx.message.text.split(" ").slice(1).join(" ");
 	if (arguments != "") {
 		try {
 			arguments = JSON.parse(arguments);
@@ -131,7 +132,7 @@ bot.command("advancedgenerate", (ctx) => {
 });
 
 bot.command("editparameter", async (ctx) => {
-	arguments = ctx.message.text.substring(15);
+	arguments = ctx.message.text.split(" ").slice(1).join(" ");
 
 	if (arguments != "") {
 		if (!userLatestSettings[ctx.from.id]) {
@@ -166,7 +167,7 @@ bot.command("editparameter", async (ctx) => {
 });
 
 bot.command("enable", (ctx) => {
-	arguments = ctx.message.text.substring(8);
+	arguments = ctx.message.text.split(" ").slice(1).join(" ");
 	if (arguments == process.env.PASSWORD && !userSettings[ctx.from.id]) {
 		userSettings[ctx.from.id] = {};
 		saveAllUserSettings();
@@ -185,7 +186,7 @@ bot.command("deauth", (ctx) => {
 });
 
 bot.command("setuc", (ctx) => {
-	arguments = ctx.message.text.substring(7);
+	arguments = ctx.message.text.split(" ").slice(1).join(" ");
 	if (arguments != "") {
 		userSettings[ctx.from.id].uc = arguments;
 		saveAllUserSettings();
@@ -196,7 +197,7 @@ bot.command("setuc", (ctx) => {
 });
 
 bot.command("setqt", (ctx) => {
-	arguments = ctx.message.text.substring(7);
+	arguments = ctx.message.text.split(" ").slice(1).join(" ");
 	if (arguments != "") {
 		userSettings[ctx.from.id].qt = arguments;
 		saveAllUserSettings();
@@ -207,7 +208,7 @@ bot.command("setqt", (ctx) => {
 });
 
 bot.command("setsteps", (ctx) => {
-	arguments = ctx.message.text.substring(10);
+	arguments = ctx.message.text.split(" ").slice(1).join(" ");
 	if (arguments != "") {
 		if (parseInt(arguments) > 0 && parseInt(arguments) < 51) {
 			userSettings[ctx.from.id].steps = parseInt(arguments);
@@ -222,7 +223,7 @@ bot.command("setsteps", (ctx) => {
 });
 
 bot.command("setscale", (ctx) => {
-	arguments = ctx.message.text.substring(10);
+	arguments = ctx.message.text.split(" ").slice(1).join(" ");
 	if (arguments != "") {
 		if (parseInt(arguments) >= 0 && parseInt(arguments) < 51) {
 			userSettings[ctx.from.id].scale = parseInt(arguments);
@@ -240,8 +241,17 @@ bot.command("getstatus", (ctx) => {
 	ctx.reply("当前有 " + apiQueue.getLength() + " 个任务\n您当前的个人设置为 `" + JSON.stringify(userSettings[ctx.from.id]) + "`", { parse_mode: "Markdown" });
 });
 
-bot.on("text", async (ctx) => {
+bot.on(message('text'), async (ctx) => {
 	ProcessUserRequest(ctx, { prompt: ctx.message.text });
+});
+
+bot.command("generate", (ctx) => {
+	arguments = ctx.message.text.split(" ").slice(1).join(" ");
+	if (arguments != "") {
+		ProcessUserRequest(ctx, { prompt: arguments });
+	} else {
+		ctx.reply("请在命令后输入 prompt");
+	}
 });
 
 bot.on("callback_query", async (ctx) => {
