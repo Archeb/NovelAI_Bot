@@ -1,5 +1,5 @@
 const { Telegraf, Markup } = require("telegraf");
-const { message } = require('telegraf/filters');
+const { message } = require("telegraf/filters");
 var yauzl = require("yauzl");
 const superagent = require("superagent");
 const queue = require("promise-queue-plus");
@@ -68,12 +68,24 @@ bot.command("setsize", (ctx) => {
 			ctx.reply("参数错误");
 		}
 	} else {
-		ctx.reply("请选择你需要的图片尺寸，或者使用 `/setsize <width> <height>` 来自定义尺寸 \n总像素不能超过983040px (1280x768)，且边长需为64的倍数", {
-			...Markup.inlineKeyboard([
-				[Markup.button.callback("↕️ Portrait (纵向 832x1216)", "setSizePortrait")],
-				[Markup.button.callback("↔️ Landscape (横向 1216x832)", "setSizeLandscape")],
-				[Markup.button.callback("⬜ Square (方形 1024x1024)", "setSizeSquare")],
-			]),
+		ctx.reply("请选择你需要的图片尺寸，或者使用 `/setsize <width> <height>` 来自定义尺寸 \n注意：“普通”以外的尺寸需要消耗点数", {
+			...Markup.inlineKeyboard(
+				[
+					[
+						Markup.button.callback("↕️ 普通纵向 (832x1216)", "setSize 832 1216"),
+						Markup.button.callback("↕️ 大幅纵向 (1024x1536)", "setSize 1216 832"),
+					],
+					[
+						Markup.button.callback("↔️ 普通横向 (1216x832)", "setSize 1024 1536"),
+						Markup.button.callback("↔️ 大幅横向 (1536x1024)", "setSize 1536 1024"),
+					],
+					[
+						Markup.button.callback("◼️ 普通方形 (1024x1024)", "setSize 1024 1024"),
+						Markup.button.callback("◼️ 大幅方形 (1472x1472)", "setSize 1472 1472"),
+					],
+				],
+				{ columns: 2 }
+			),
 			parse_mode: "Markdown",
 		});
 	}
@@ -249,22 +261,21 @@ bot.command("generate", (ctx) => {
 	}
 });
 
-bot.on(message('text'), async (ctx) => {
+bot.on(message("text"), async (ctx) => {
 	ProcessUserRequest(ctx, { prompt: ctx.message.text });
 });
-
 
 bot.on("callback_query", async (ctx) => {
 	switch (ctx.callbackQuery.data.split(" ")[0]) {
 		case "getRaw":
-			if(userLatestRaw[ctx.callbackQuery.data.split(" ")[1]]) {
+			if (userLatestRaw[ctx.callbackQuery.data.split(" ")[1]]) {
 				// send raw as image file
 				await ctx.answerCbQuery("正在发送原图");
-				await ctx.sendDocument({ 
+				await ctx.sendDocument({
 					filename: "image.png",
-					source: userLatestRaw[ctx.callbackQuery.data.split(" ")[1]] 
+					source: userLatestRaw[ctx.callbackQuery.data.split(" ")[1]],
 				});
-			}else{
+			} else {
 				await ctx.answerCbQuery("图片已过期，请重新生成");
 				return;
 			}
@@ -279,7 +290,7 @@ bot.on("callback_query", async (ctx) => {
 			break;
 		case "increaseSteps":
 			await ctx.answerCbQuery("如需更多步数，请前往网页版使用");
-			return
+			return;
 			break;
 		case "decreaseSteps":
 			if (userLatestSettings[ctx.from.id]) {
@@ -299,28 +310,18 @@ bot.on("callback_query", async (ctx) => {
 				await ctx.answerCbQuery("您还没有生成过图片");
 			}
 			break;
-		case "setSizeSquare":
+		case "setSize":
 			if (userSettings[ctx.from.id]) {
-				userSettings[ctx.from.id].width = 1024;
-				userSettings[ctx.from.id].height = 1024;
-				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置图片尺寸为 Square");
-			}
-			break;
-		case "setSizeLandscape":
-			if (userSettings[ctx.from.id]) {
-				userSettings[ctx.from.id].width = 1216;
-				userSettings[ctx.from.id].height = 832;
-				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置图片尺寸为 Landscape");
-			}
-			break;
-		case "setSizePortrait":
-			if (userSettings[ctx.from.id]) {
-				userSettings[ctx.from.id].width = 832;
-				userSettings[ctx.from.id].height = 1216;
-				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置图片尺寸为 Portrait");
+				// get size from parameters
+				let params = ctx.callbackQuery.data.split(" ");
+				if (params.length == 3) {
+					userSettings[ctx.from.id].width = parseInt(params[1]);
+					userSettings[ctx.from.id].height = parseInt(params[2]);
+					saveAllUserSettings();
+					await ctx.answerCbQuery("已设置图片尺寸为 " + params[1] + "x" + params[2]);
+				} else {
+					await ctx.answerCbQuery("参数错误");
+				}
 			}
 			break;
 		case "setsampler1":
@@ -407,12 +408,21 @@ Prompt: \`${temporarySettings.prompt.length < 990 ? temporarySettings.prompt : "
 			);
 		})
 		.catch((err) => {
-			if(err.indexOf(`An error occured while generating the image` != -1)) {
-				ctx.reply("出现错误：`NovelAI API 后端错误，请重试。`", { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.callback("🔁 重试", "repeatSample")]])});
-			}else if (err.length < 500) {
-				ctx.reply("出现错误：`" + err + "`", { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.callback("🔁 重试", "repeatSample")]])});
-			}else{
-				ctx.reply("出现错误：`" + err.substring(0, 500) + "`", { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.callback("🔁 重试", "repeatSample")]])});
+			if (err.indexOf(`An error occured while generating the image` != -1)) {
+				ctx.reply("出现错误：`NovelAI API 后端错误，请重试。`", {
+					parse_mode: "Markdown",
+					...Markup.inlineKeyboard([[Markup.button.callback("🔁 重试", "repeatSample")]]),
+				});
+			} else if (err.length < 500) {
+				ctx.reply("出现错误：`" + err + "`", {
+					parse_mode: "Markdown",
+					...Markup.inlineKeyboard([[Markup.button.callback("🔁 重试", "repeatSample")]]),
+				});
+			} else {
+				ctx.reply("出现错误：`" + err.substring(0, 500) + "`", {
+					parse_mode: "Markdown",
+					...Markup.inlineKeyboard([[Markup.button.callback("🔁 重试", "repeatSample")]]),
+				});
 			}
 			console.error(err);
 		})
@@ -438,10 +448,10 @@ function RequestAPI({
 }) {
 	return new Promise((resolve, reject) => {
 		let finalSettings = {
-			"input": prompt + "," + qt,
-			"model": "nai-diffusion-3",
-			"action": "generate",
-			"parameters": {
+			input: prompt + "," + qt,
+			model: "nai-diffusion-3",
+			action: "generate",
+			parameters: {
 				add_original_image: false,
 				cfg_rescale: 0,
 				controlnet_strength: 1,
@@ -462,8 +472,8 @@ function RequestAPI({
 				steps,
 				ucPreset: 0,
 				uncond_scale: 1,
-				width
-			}
+				width,
+			},
 		};
 		console.log(finalSettings);
 		superagent
@@ -472,12 +482,11 @@ function RequestAPI({
 			.send(finalSettings)
 			.end((err, res) => {
 				if (err) {
-					if(err.status == 429) {
+					if (err.status == 429) {
 						reject("API请求频率过高，请稍后再试");
-					}else{
+					} else {
 						reject(JSON.stringify(err));
 					}
-					
 				} else {
 					// use yauzl to unzip res.body and get the file /image_0.png
 					yauzl.fromBuffer(res.body, { lazyEntries: true }, (err, zipfile) => {
@@ -491,12 +500,14 @@ function RequestAPI({
 										if (err) {
 											reject(JSON.stringify(err));
 										} else {
-											readStream.pipe(concatstream((imgBuffer) => {
-												resolve({
-													img: imgBuffer,
-													settings: finalSettings
-												});
-											}));
+											readStream.pipe(
+												concatstream((imgBuffer) => {
+													resolve({
+														img: imgBuffer,
+														settings: finalSettings,
+													});
+												})
+											);
 										}
 									});
 								} else {
@@ -505,7 +516,6 @@ function RequestAPI({
 							});
 						}
 					});
-					
 				}
 			});
 	});
