@@ -1,6 +1,6 @@
 const { Telegraf, Markup } = require("telegraf");
 const { message } = require("telegraf/filters");
-var yauzl = require("yauzl");
+const yauzl = require("yauzl");
 const superagent = require("superagent");
 const queue = require("promise-queue-plus");
 const fs = require("fs");
@@ -73,10 +73,10 @@ bot.command("setsize", (ctx) => {
 				[
 					[
 						Markup.button.callback("↕️ 普通纵向 (832x1216)", "setSize 832 1216"),
-						Markup.button.callback("↕️ 大幅纵向 (1024x1536)", "setSize 1216 832"),
+						Markup.button.callback("↕️ 大幅纵向 (1024x1536)", "setSize 1024 1536"),
 					],
 					[
-						Markup.button.callback("↔️ 普通横向 (1216x832)", "setSize 1024 1536"),
+						Markup.button.callback("↔️ 普通横向 (1216x832)", "setSize 1216 832"),
 						Markup.button.callback("↔️ 大幅横向 (1536x1024)", "setSize 1536 1024"),
 					],
 					[
@@ -395,8 +395,13 @@ async function ProcessUserRequest(ctx, temporarySettings = {}, newSeed = false) 
 				{ source: apiRet.img },
 				{
 					caption: `Seed: \`${apiRet.settings.parameters.seed}\`
-Scale: \`${apiRet.settings.parameters.scale}\`
+Scale: \`${apiRet.settings.parameters.scale}\` Steps${parseInt(apiRet.settings.parameters.steps) >= 29 ? " *⚠正在使用收费点数*" : ""}: \`${
+						apiRet.settings.parameters.steps
+					}\`
 Sampler: \`${apiRet.settings.parameters.sampler}\`
+Size${parseInt(apiRet.settings.parameters.width) * parseInt(apiRet.settings.parameters.height) > 1048576 ? " *⚠正在使用收费点数*" : ""}: \`${
+						apiRet.settings.parameters.width
+					}x${apiRet.settings.parameters.height}\`
 Prompt: \`${temporarySettings.prompt.length < 990 ? temporarySettings.prompt : "太长了，自己反思一下"}\``,
 					parse_mode: "Markdown",
 					reply_to_message_id: ctx.message?.message_id ?? undefined,
