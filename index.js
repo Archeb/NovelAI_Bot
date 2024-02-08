@@ -93,25 +93,25 @@ bot.command("setsize", (ctx) => {
 
 function getSamplerMenu(ctx) {
 	let userId = ctx.from.id;
-    let userSetting = userSettings[userId];
-    let sampler = userSetting ? userSetting.sampler : null;
+	let userSetting = userSettings[userId];
+	let sampler = userSetting ? userSetting.sampler : null;
 
-    let eulerAncestralStatus = sampler === 'k_euler_ancestral' ? "🔘 " : "";
-    let eulerStatus = sampler === 'k_euler' ? "🔘 " : "";
-    let dpmpp2sAncestralStatus = sampler === 'k_dpmpp_2s_ancestral' ? "🔘 " : "";
-    let dpmppSdeStatus = sampler === 'k_dpmpp_sde' ? "🔘 " : "";
+	let eulerAncestralStatus = sampler === "k_euler_ancestral" ? "🔘 " : "";
+	let eulerStatus = sampler === "k_euler" ? "🔘 " : "";
+	let dpmpp2sAncestralStatus = sampler === "k_dpmpp_2s_ancestral" ? "🔘 " : "";
+	let dpmppSdeStatus = sampler === "k_dpmpp_sde" ? "🔘 " : "";
 	let SMEAStatus = userSetting && userSetting.sm ? "✅ " : "❎";
 	let DYNStatus = userSetting && userSetting.sm_dyn ? "✅ " : "❎ ";
 	return {
 		inline_keyboard: [
 			[
-                { text: eulerAncestralStatus + " Euler Ancestral", callback_data: "setsampler1" },
-                { text: eulerStatus + " Euler", callback_data: "setsampler2" },
-            ],
-            [
-                { text: dpmpp2sAncestralStatus + " DPM++ 2S Ancestral", callback_data: "setsampler3" },
-                { text: dpmppSdeStatus + " DPM++ SDE", callback_data: "setsampler4" },
-            ],
+				{ text: eulerAncestralStatus + " Euler Ancestral", callback_data: "setsampler1" },
+				{ text: eulerStatus + " Euler", callback_data: "setsampler2" },
+			],
+			[
+				{ text: dpmpp2sAncestralStatus + " DPM++ 2S Ancestral", callback_data: "setsampler3" },
+				{ text: dpmppSdeStatus + " DPM++ SDE", callback_data: "setsampler4" },
+			],
 			[
 				{ text: SMEAStatus + "SMEA", callback_data: "toggleSMEA" },
 				{ text: DYNStatus + "DYN", callback_data: "toggleDYN" },
@@ -351,7 +351,8 @@ bot.on("callback_query", async (ctx) => {
 			if (userSettings[ctx.from.id]) {
 				userSettings[ctx.from.id].sampler = "k_euler_ancestral";
 				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置Sampler为 k_euler_ancestral");bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
+				await ctx.answerCbQuery("已设置Sampler为 k_euler_ancestral");
+				bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
 					console.error(err);
 				});
 			}
@@ -360,7 +361,8 @@ bot.on("callback_query", async (ctx) => {
 			if (userSettings[ctx.from.id]) {
 				userSettings[ctx.from.id].sampler = "k_euler";
 				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置Sampler为 k_euler");bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
+				await ctx.answerCbQuery("已设置Sampler为 k_euler");
+				bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
 					console.error(err);
 				});
 			}
@@ -369,7 +371,8 @@ bot.on("callback_query", async (ctx) => {
 			if (userSettings[ctx.from.id]) {
 				userSettings[ctx.from.id].sampler = "k_dpmpp_2s_ancestral";
 				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置Sampler为 DPM++ 2S Ancestral");bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
+				await ctx.answerCbQuery("已设置Sampler为 DPM++ 2S Ancestral");
+				bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
 					console.error(err);
 				});
 			}
@@ -378,7 +381,8 @@ bot.on("callback_query", async (ctx) => {
 			if (userSettings[ctx.from.id]) {
 				userSettings[ctx.from.id].sampler = "k_dpmpp_sde";
 				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置Sampler为 DPM++ SDE");bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
+				await ctx.answerCbQuery("已设置Sampler为 DPM++ SDE");
+				bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
 					console.error(err);
 				});
 			}
@@ -501,6 +505,8 @@ function RequestAPI({
 	height = 1216,
 	sampler = "k_dpmpp_2s_ancestral",
 	scale = 5,
+	sm = false,
+	sm_dyn = false,
 	qt = defaultQT,
 	uc = defaultUC,
 	steps = 28,
@@ -526,8 +532,8 @@ function RequestAPI({
 				sampler,
 				scale,
 				seed,
-				sm: false,
-				sm_dyn: false,
+				sm,
+				sm_dyn,
 				steps,
 				ucPreset: 0,
 				uncond_scale: 1,
