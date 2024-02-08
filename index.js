@@ -91,14 +91,37 @@ bot.command("setsize", (ctx) => {
 	}
 });
 
+function getSamplerMenu(ctx) {
+	let userId = ctx.from.id;
+    let userSetting = userSettings[userId];
+    let sampler = userSetting ? userSetting.sampler : null;
+
+    let eulerAncestralStatus = sampler === 'k_euler_ancestral' ? "🔘 " : "";
+    let eulerStatus = sampler === 'k_euler' ? "🔘 " : "";
+    let dpmpp2sAncestralStatus = sampler === 'k_dpmpp_2s_ancestral' ? "🔘 " : "";
+    let dpmppSdeStatus = sampler === 'k_dpmpp_sde' ? "🔘 " : "";
+	let SMEAStatus = userSetting && userSetting.sm ? "✅ " : "❎";
+	let DYNStatus = userSetting && userSetting.sm_dyn ? "✅ " : "❎ ";
+	return {
+		inline_keyboard: [
+			[
+                { text: eulerAncestralStatus + " Euler Ancestral", callback_data: "setsampler1" },
+                { text: eulerStatus + " Euler", callback_data: "setsampler2" },
+            ],
+            [
+                { text: dpmpp2sAncestralStatus + " DPM++ 2S Ancestral", callback_data: "setsampler3" },
+                { text: dpmppSdeStatus + " DPM++ SDE", callback_data: "setsampler4" },
+            ],
+			[
+				{ text: SMEAStatus + "SMEA", callback_data: "toggleSMEA" },
+				{ text: DYNStatus + "DYN", callback_data: "toggleDYN" },
+			],
+		],
+	};
+}
+
 bot.command("setsampler", (ctx) => {
-	ctx.reply(
-		"请选择你需要的Sampler",
-		Markup.inlineKeyboard([
-			[Markup.button.callback("Euler Ancestral", "setsampler1"), Markup.button.callback("Euler", "setsampler2")],
-			[Markup.button.callback("DPM++ 2S Ancestral", "setsampler3"), Markup.button.callback("DPM++ SDE", "setsampler4")],
-		])
-	);
+	ctx.reply("请选择你需要的Sampler", { reply_markup: getSamplerMenu(ctx) });
 });
 
 bot.command("advancedgenerate", (ctx) => {
@@ -328,30 +351,61 @@ bot.on("callback_query", async (ctx) => {
 			if (userSettings[ctx.from.id]) {
 				userSettings[ctx.from.id].sampler = "k_euler_ancestral";
 				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置Sampler为 k_euler_ancestral");
+				await ctx.answerCbQuery("已设置Sampler为 k_euler_ancestral");bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
+					console.error(err);
+				});
 			}
 			break;
 		case "setsampler2":
 			if (userSettings[ctx.from.id]) {
 				userSettings[ctx.from.id].sampler = "k_euler";
 				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置Sampler为 k_euler");
+				await ctx.answerCbQuery("已设置Sampler为 k_euler");bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
+					console.error(err);
+				});
 			}
 			break;
 		case "setsampler3":
 			if (userSettings[ctx.from.id]) {
 				userSettings[ctx.from.id].sampler = "k_dpmpp_2s_ancestral";
 				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置Sampler为 DPM++ 2S Ancestral");
+				await ctx.answerCbQuery("已设置Sampler为 DPM++ 2S Ancestral");bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
+					console.error(err);
+				});
 			}
 			break;
 		case "setsampler4":
 			if (userSettings[ctx.from.id]) {
 				userSettings[ctx.from.id].sampler = "k_dpmpp_sde";
 				saveAllUserSettings();
-				await ctx.answerCbQuery("已设置Sampler为 DPM++ SDE");
+				await ctx.answerCbQuery("已设置Sampler为 DPM++ SDE");bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
+					console.error(err);
+				});
 			}
 			break;
+		case "toggleSMEA":
+			if (userSettings[ctx.from.id]) {
+				userSettings[ctx.from.id].sm = !userSettings[ctx.from.id].sm;
+				// if sm is disabled, sm_dyn must be disabled
+				if (!userSettings[ctx.from.id].sm) userSettings[ctx.from.id].sm_dyn = false;
+				saveAllUserSettings();
+				await ctx.answerCbQuery("已切换SMEA为" + (userSettings[ctx.from.id].sm ? "开启" : "关闭"));
+				bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
+					console.error(err);
+				});
+			}
+			break;
+		case "toggleDYN":
+			if (userSettings[ctx.from.id]) {
+				userSettings[ctx.from.id].sm_dyn = !userSettings[ctx.from.id].sm_dyn;
+				// if sm_dyn is enabled, sm must be enabled
+				if (userSettings[ctx.from.id].sm_dyn) userSettings[ctx.from.id].sm = true;
+				saveAllUserSettings();
+				await ctx.answerCbQuery("已切换DYN为" + (userSettings[ctx.from.id].sm_dyn ? "开启" : "关闭"));
+				bot.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.callbackQuery.message.message_id, undefined, getSamplerMenu(ctx)).catch((err) => {
+					console.error(err);
+				});
+			}
 		default:
 			await ctx.answerCbQuery("未知的操作");
 			break;
