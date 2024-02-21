@@ -26,17 +26,17 @@ const workFinEmitter = new events.EventEmitter();
 
 bot.use(async (ctx, next) => {
 	// if user is not authorized, only allow /start, /enable, /help
-	if (ctx.message.text?.startsWith("/start") || ctx.message.text?.startsWith("/enable") || ctx.message.text?.startsWith("/help")) {
+	if (ctx.message?.text && (ctx.message.text?.startsWith("/start") || ctx.message.text?.startsWith("/enable") || ctx.message.text?.startsWith("/help"))) {
 		next();
 	} else if (userSettings[ctx.from.id]) {
-		if(userSettings[ctx.from.id].fromGroup){
+		if (userSettings[ctx.from.id].fromGroup) {
 			ctx.reply("您是从群组中授权的用户，无法使用私聊功能。如需使用私聊功能，请通过 /enable 输入密码启用").catch((err) => {
 				console.error(err);
 			});
 		} else {
 			next();
 		}
-	} else if ((ctx.message.chat.type == "group" || ctx.message.chat.type == "supergroup") && process.env.GROUP_WHITELIST) {
+	} else if ((ctx.message?.chat.type == "group" || ctx.message?.chat.type == "supergroup") && process.env.GROUP_WHITELIST) {
 		// check if group in white list
 		let whiteList = process.env.GROUP_WHITELIST.split(",");
 		if (whiteList.includes(ctx.message.chat.id.toString())) {
@@ -46,9 +46,15 @@ bot.use(async (ctx, next) => {
 			next();
 		}
 	} else {
-		ctx.reply("You are not authorized.").catch((err) => {
-			console.error(err);
-		});
+		if (ctx.update) {
+			ctx.answerCbQuery("You are not authorized.").catch((err) => {
+				console.error(err);
+			});
+		} else {
+			ctx.reply("You are not authorized.").catch((err) => {
+				console.error(err);
+			});
+		}
 	}
 });
 
@@ -182,20 +188,14 @@ bot.command("advancedgenerate", (ctx) => {
 	}
 });
 
-bot.command("openweb",async (ctx)=>{
-	// use inline keyboard button 
-	ctx.reply("test telegram mini apps",
-	{
+bot.command("openweb", async (ctx) => {
+	// use inline keyboard button
+	ctx.reply("test telegram mini apps", {
 		reply_markup: {
-			inline_keyboard: [
-				[
-					{text: "Open Web", url: "https://t.me/MozzieTestBot/searchtest"}
-				]
-			]
-		}
-	}
-	)
-})
+			inline_keyboard: [[{ text: "Open Web", url: "https://t.me/MozzieTestBot/searchtest" }]],
+		},
+	});
+});
 
 bot.command("editparameter", async (ctx) => {
 	arguments = ctx.message.text.split(" ").slice(1).join(" ");
@@ -320,7 +320,7 @@ bot.command("generate", (ctx) => {
 });
 
 bot.on(message("text"), async (ctx) => {
-	if(ctx.message.chat.type == "private") ProcessUserRequest(ctx, { prompt: ctx.message.text });
+	if (ctx.message.chat.type == "private") ProcessUserRequest(ctx, { prompt: ctx.message.text });
 });
 
 bot.on("callback_query", async (ctx) => {
