@@ -29,7 +29,7 @@ bot.use(async (ctx, next) => {
 	if (ctx.message?.text && (ctx.message.text?.startsWith("/start") || ctx.message.text?.startsWith("/enable") || ctx.message.text?.startsWith("/help"))) {
 		next();
 	} else if (userSettings[ctx.from.id]) {
-		if (userSettings[ctx.from.id].fromGroup) {
+		if (userSettings[ctx.from.id].fromGroup && ctx.message?.chat.type == "private") {
 			ctx.reply("您是从群组中授权的用户，无法使用私聊功能。如需使用私聊功能，请通过 /enable 输入密码启用").catch((err) => {
 				console.error(err);
 			});
