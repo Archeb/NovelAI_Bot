@@ -46,7 +46,7 @@ bot.use(async (ctx, next) => {
 			next();
 		}
 	} else {
-		if (ctx.update) {
+		if (ctx.update.callback_query) {
 			ctx.answerCbQuery("You are not authorized.").catch((err) => {
 				console.error(err);
 			});
@@ -331,8 +331,18 @@ bot.on("callback_query", async (ctx) => {
 				await ctx.answerCbQuery("正在发送原图");
 				await ctx.sendDocument({
 					filename: "image.png",
-					source: userLatestRaw[ctx.callbackQuery.data.split(" ")[1]],
+					source: userLatestRaw[ctx.callbackQuery.data.split(" ")[1]].img,
 				});
+			} else {
+				await ctx.answerCbQuery("图片已过期，请重新生成");
+				return;
+			}
+			break;
+		case "getPrompt":
+			if (userLatestRaw[ctx.callbackQuery.data.split(" ")[1]]) {
+				// reply with prompt
+				await ctx.answerCbQuery("正在发送 prompt");
+				await ctx.reply("Prompt：\n`" + userLatestRaw[ctx.callbackQuery.data.split(" ")[1]].settings.input+ "`", { parse_mode: "Markdown" ,reply_to_message_id: ctx.callbackQuery.message.message_id});
 			} else {
 				await ctx.answerCbQuery("图片已过期，请重新生成");
 				return;
@@ -482,7 +492,7 @@ async function ProcessUserRequest(ctx, temporarySettings = {}, newSeed = false) 
 			if (Object.keys(userLatestRaw).length > 500) {
 				delete userLatestRaw[Object.keys(userLatestRaw)[0]];
 			}
-			userLatestRaw[genID] = apiRet.img;
+			userLatestRaw[genID] = apiRet;
 			await bot.telegram.editMessageText(ctx.chat.id, tipMsgId, undefined, "正在上传中……");
 			await ctx.replyWithPhoto(
 				{ source: apiRet.img },
@@ -494,13 +504,14 @@ Scale: \`${apiRet.settings.parameters.scale}\` Steps${parseInt(apiRet.settings.p
 Sampler: \`${apiRet.settings.parameters.sampler}\`
 Size${parseInt(apiRet.settings.parameters.width) * parseInt(apiRet.settings.parameters.height) > 1048576 ? " *⚠正在使用收费点数*" : ""}: \`${
 						apiRet.settings.parameters.width
-					}x${apiRet.settings.parameters.height}\`
-Prompt: \`${temporarySettings.prompt.length < 990 ? temporarySettings.prompt : "太长了，自己反思一下"}\``,
+					}x${apiRet.settings.parameters.height}\``,
 					parse_mode: "Markdown",
 					reply_to_message_id: ctx.message?.message_id ?? undefined,
 					...Markup.inlineKeyboard([
 						[Markup.button.callback("🔁 再来一张", "repeatSample")],
-						[Markup.button.callback("⬇️ 获取原图", `getRaw ${genID}`)],
+						[Markup.button.callback("📝 获取提示", `getPrompt ${genID}`),
+							Markup.button.callback("⬇️ 获取原图", `getRaw ${genID}`),
+					],
 					]),
 				}
 			);
