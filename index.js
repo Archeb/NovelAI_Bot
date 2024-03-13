@@ -464,6 +464,8 @@ bot.on("callback_query", async (ctx) => {
 bot.launch();
 
 async function ProcessUserRequest(ctx, temporarySettings = {}, newSeed = false) {
+
+
 	let taskIndex = apiQueue.getLength() + 1;
 	let tipMsgId = (await ctx.reply("正在生成中...")).message_id;
 
@@ -517,7 +519,7 @@ Size${parseInt(apiRet.settings.parameters.width) * parseInt(apiRet.settings.para
 			);
 		})
 		.catch((err) => {
-			if (err.indexOf(`An error occured while generating the image` != -1)) {
+			if (err.indexOf(`An error occured while generating the image`) != -1) {
 				ctx.reply("出现错误：`NovelAI API 后端错误，请重试。`", {
 					parse_mode: "Markdown",
 					...Markup.inlineKeyboard([[Markup.button.callback("🔁 重试", "repeatSample")]]),
@@ -557,6 +559,7 @@ function RequestAPI({
 	uc = defaultUC,
 	steps = 28,
 }) {
+
 	return new Promise((resolve, reject) => {
 		let finalSettings = {
 			input: prompt + "," + qt,
@@ -587,6 +590,11 @@ function RequestAPI({
 			},
 		};
 		console.log(finalSettings);
+		
+		if (process.env.FREE_GENERATION_ONLY == "true" && (parseInt(finalSettings.parameters.steps) >= 29 || parseInt(finalSettings.parameters.width) * parseInt(finalSettings.parameters.height) > 1048576)) {
+			reject("您的请求超出了免费范围，如需使用，请前往网页版使用");
+			return;
+		}
 		superagent
 			.post(endpoint)
 			.set("Authorization", `Bearer ${process.env.NAI_TOKEN}`)
