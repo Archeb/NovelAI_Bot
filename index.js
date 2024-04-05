@@ -7,7 +7,7 @@ const fs = require("fs");
 const events = require("events");
 const concatstream = require("concat-stream");
 
-const endpoint = "https://api.novelai.net/ai/generate-image";
+const endpoint = "https://image.novelai.net/ai/generate-image";
 const defaultUC =
 	"{bad}, error, fewer, extra, missing, worst quality, jpeg artifacts, bad quality, watermark, unfinished, displeasing, chromatic aberration, signature, extra digits, artistic error, username, scan, [abstract], bad anatomy, bad proportions";
 const defaultQT = "best quality, amazing quality, very aesthetic, absurdres";
