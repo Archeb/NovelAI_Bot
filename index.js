@@ -8,6 +8,8 @@ const events = require("events");
 const concatstream = require("concat-stream");
 
 const endpoint = "https://image.novelai.net/ai/generate-image";
+const availableModels = ["nai-diffusion-4-curated-preview", "nai-diffusion-4-full", "nai-diffusion-v3", "nai-diffusion-furry-3"];
+const defaultModel = availableModels[0];
 const defaultUC =
 	"{bad}, error, fewer, extra, missing, worst quality, jpeg artifacts, bad quality, watermark, unfinished, displeasing, chromatic aberration, signature, extra digits, artistic error, username, scan, [abstract], bad anatomy, bad proportions";
 const defaultQT = "best quality, amazing quality, very aesthetic, absurdres";
@@ -266,6 +268,17 @@ bot.command("setuc", (ctx) => {
 	}
 });
 
+bot.command("setmodel", (ctx) => {
+	arguments = ctx.message.text.split(" ").slice(1).join(" ");
+	if (arguments != "" && availableModels.includes(arguments)) {
+		userSettings[ctx.from.id].model = arguments;
+		saveAllUserSettings();
+		ctx.reply("模型已设置为：" + arguments);
+	} else {
+		ctx.reply("请在命令后输入要使用的模型\n可用的模型有：\n" + availableModels.join("\n"), { parse_mode: "Markdown" });
+	}
+});
+
 bot.command("setqt", (ctx) => {
 	arguments = ctx.message.text.split(" ").slice(1).join(" ");
 	if (arguments != "") {
@@ -342,7 +355,10 @@ bot.on("callback_query", async (ctx) => {
 			if (userLatestRaw[ctx.callbackQuery.data.split(" ")[1]]) {
 				// reply with prompt
 				await ctx.answerCbQuery("正在发送 prompt");
-				await ctx.reply("Prompt：\n`" + userLatestRaw[ctx.callbackQuery.data.split(" ")[1]].settings.input+ "`", { parse_mode: "Markdown" ,reply_to_message_id: ctx.callbackQuery.message.message_id});
+				await ctx.reply("Prompt：\n`" + userLatestRaw[ctx.callbackQuery.data.split(" ")[1]].settings.input + "`", {
+					parse_mode: "Markdown",
+					reply_to_message_id: ctx.callbackQuery.message.message_id,
+				});
 			} else {
 				await ctx.answerCbQuery("图片已过期，请重新生成");
 				return;
@@ -464,8 +480,6 @@ bot.on("callback_query", async (ctx) => {
 bot.launch();
 
 async function ProcessUserRequest(ctx, temporarySettings = {}, newSeed = false) {
-
-
 	let taskIndex = apiQueue.getLength() + 1;
 	let tipMsgId = (await ctx.reply("正在生成中...")).message_id;
 
@@ -499,7 +513,8 @@ async function ProcessUserRequest(ctx, temporarySettings = {}, newSeed = false) 
 			await ctx.replyWithPhoto(
 				{ source: apiRet.img },
 				{
-					caption: `Seed: \`${apiRet.settings.parameters.seed}\`
+					caption: `Model: ` + `\`${apiRet.settings.model}\`
+Seed: \`${apiRet.settings.parameters.seed}\`
 Scale: \`${apiRet.settings.parameters.scale}\` Steps${parseInt(apiRet.settings.parameters.steps) >= 29 ? " *⚠正在使用收费点数*" : ""}: \`${
 						apiRet.settings.parameters.steps
 					}\`
@@ -511,9 +526,7 @@ Size${parseInt(apiRet.settings.parameters.width) * parseInt(apiRet.settings.para
 					reply_to_message_id: ctx.message?.message_id ?? undefined,
 					...Markup.inlineKeyboard([
 						[Markup.button.callback("🔁 再来一张", "repeatSample")],
-						[Markup.button.callback("📝 获取提示", `getPrompt ${genID}`),
-							Markup.button.callback("⬇️ 获取原图", `getRaw ${genID}`),
-					],
+						[Markup.button.callback("📝 获取提示", `getPrompt ${genID}`), Markup.button.callback("⬇️ 获取原图", `getRaw ${genID}`)],
 					]),
 				}
 			);
@@ -557,13 +570,13 @@ function RequestAPI({
 	sm_dyn = false,
 	qt = defaultQT,
 	uc = defaultUC,
+	model = defaultModel,
 	steps = 28,
 }) {
-
 	return new Promise((resolve, reject) => {
 		let finalSettings = {
 			input: prompt + "," + qt,
-			model: "nai-diffusion-3",
+			model: model,
 			action: "generate",
 			parameters: {
 				add_original_image: false,
@@ -585,13 +598,32 @@ function RequestAPI({
 				sm_dyn,
 				steps,
 				ucPreset: 0,
-				uncond_scale: 1,
 				width,
 			},
 		};
+		if (model.startsWith("nai-diffusion-4")) {
+			finalSettings.parameters.v4_negative_prompt = {
+				caption: {
+					base_caption: uc,
+					char_captions: [],
+				},
+				legacy_uc: false,
+			};
+			finalSettings.parameters.v4_prompt = {
+				caption: {
+					base_caption: prompt + "," + qt,
+					char_captions: [],
+				},
+				use_coords: false,
+				use_order: true,
+			};
+		}
 		console.log(finalSettings);
-		
-		if (process.env.FREE_GENERATION_ONLY == "true" && (parseInt(finalSettings.parameters.steps) >= 29 || parseInt(finalSettings.parameters.width) * parseInt(finalSettings.parameters.height) > 1048576)) {
+
+		if (
+			process.env.FREE_GENERATION_ONLY == "true" &&
+			(parseInt(finalSettings.parameters.steps) >= 29 || parseInt(finalSettings.parameters.width) * parseInt(finalSettings.parameters.height) > 1048576)
+		) {
 			reject("您的请求超出了免费范围，如需使用，请前往网页版使用");
 			return;
 		}
